@@ -47,13 +47,14 @@ module JB
   end #Path
 end #JB
 
-# Usage: rake post title="A Title" [date="2012-02-09"]
-desc "Begin a new post in #{CONFIG['posts']}"
-task :post do
+# Usage: rake post["A Title"] [date="2012-02-09", location="elsewhere/draft.md"]
+desc "Move draft and publish in _posts; ENV opts: date, location"
+task :post, :title do |task, args|
   abort("rake aborted: '#{CONFIG['posts']}' directory not found.") unless FileTest.directory?(CONFIG['posts'])
-  draft_file = ENV["draft"] || "_drafts/draft.md"
-  title = ENV["title"] || "new-post"
+  location = ENV["location"] || "_drafts/draft.md"
+  title = args.title
   slug = title.downcase.strip.gsub(' ', '-').gsub(/[^\w-]/, '')
+  # Note: I don't think that Date can be passed in as an argument
   date, date_time, date_time_long = RakeHelper.date_time
   filename = RakeHelper.check_filename('posts', "#{date_time}-#{slug}.#{CONFIG['post_ext']}")
 
@@ -68,18 +69,18 @@ task :post do
     post.puts ""
   end
 
-  sh "cat #{draft_file} >> #{filename}"
+  sh "cat #{location} >> #{filename}"
   sh "git add #{filename}"
   sh "git commit -m \"#{title}\""
   # Empty the draft file after it has a commit history
-  sh "> #{draft_file}"
+  sh "> #{location}"
   sh "git show HEAD"
 
 end # task :post
 
 desc "Launch preview environment"
 task :preview do
-  system "jekyll --auto --server"
+  system "bundle exec jekyll serve"
 end # task :preview
 
 # Internal: Process theme package manifest file.
